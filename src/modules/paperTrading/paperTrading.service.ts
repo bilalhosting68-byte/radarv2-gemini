@@ -178,7 +178,7 @@ export class PaperTradingService {
       closeReason = 'STOP_LOSS';
     } else if (pnlPercent >= position.takeProfitPercent) {
       closeReason = 'TAKE_PROFIT';
-    } else {
+    } else if (highestPrice > position.entryExecutionPriceUsd) {
       const trailingStopPrice = highestPrice * (1 - position.trailingStopPercent / 100);
       if (currentMarketPrice <= trailingStopPrice) {
         closeReason = 'TRAILING_STOP';

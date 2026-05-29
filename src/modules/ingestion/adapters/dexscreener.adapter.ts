@@ -41,8 +41,24 @@ export class DexScreenerAdapter implements IngestionAdapter {
           throw new Error(`HTTP ${response.status}`);
         }
         return await response.json();
-      } catch (error) {
-        if (i === env.DEXSCREENER_MAX_RETRIES - 1) throw error;
+      } catch (error: any) {
+        if (i === env.DEXSCREENER_MAX_RETRIES - 1) {
+          try {
+            const { prisma } = await import('../../storage/database.service');
+            await prisma.botEvent.create({
+              data: {
+                level: 'ERROR',
+                source: 'DEXSCREENER',
+                type: 'API_ERROR',
+                message: error.message || 'DexScreener API failure',
+                metadata: { endpoint: url }
+              }
+            });
+          } catch (dbErr) {
+            logger.error({ dbErr }, 'Failed to save BotEvent for DexScreener error');
+          }
+          throw error;
+        }
         await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i))); // exponential backoff
       }
     }

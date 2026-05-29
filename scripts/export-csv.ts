@@ -13,16 +13,28 @@ async function exportCSV() {
     include: { events: true }
   });
 
-  const positionsCsv = stringify(positions, { header: true });
-  fs.writeFileSync(path.join(exportDir, 'paper-positions.csv'), positionsCsv);
+  if (positions.length > 0) {
+    const positionsCsv = stringify(positions, { header: true });
+    fs.writeFileSync(path.join(exportDir, 'paper-positions.csv'), positionsCsv);
+  } else {
+    console.log('Nessuna posizione paper trovata per export-csv.');
+  }
 
   const decisions = await prisma.signalDecision.findMany();
-  const decisionsCsv = stringify(decisions, { header: true });
-  fs.writeFileSync(path.join(exportDir, 'signal-decisions.csv'), decisionsCsv);
+  if (decisions.length > 0) {
+    const decisionsCsv = stringify(decisions, { header: true });
+    fs.writeFileSync(path.join(exportDir, 'signal-decisions.csv'), decisionsCsv);
+  } else {
+    console.log('Nessuna decisione trovata per export-csv.');
+  }
 
   const metrics = await prisma.metricsSnapshot.findMany();
-  const metricsCsv = stringify(metrics, { header: true });
-  fs.writeFileSync(path.join(exportDir, 'metrics-snapshots.csv'), metricsCsv);
+  if (metrics.length > 0) {
+    const metricsCsv = stringify(metrics, { header: true });
+    fs.writeFileSync(path.join(exportDir, 'metrics-snapshots.csv'), metricsCsv);
+  } else {
+    console.log('Nessuna metrica trovata per export-csv.');
+  }
 
   console.log('Successfully exported CSVs to ./exports');
 }

@@ -4,7 +4,7 @@ import { logger } from '../../../logger';
 
 export class MockRealtimeAdapter implements IngestionAdapter {
   async fetchLatestCandidates(): Promise<TokenSignalInput[]> {
-    logger.debug('MockRealtimeAdapter: Generating fake tokens');
+    logger.info('MockRealtimeAdapter: Generating fake token candidates');
     const mockToken: TokenSignalInput = {
       tokenAddress: `mock_token_${Date.now()}`,
       pairAddress: `mock_pair_${Date.now()}`,
@@ -23,12 +23,13 @@ export class MockRealtimeAdapter implements IngestionAdapter {
       pairAgeMinutes: 10,
       pairCreatedAt: new Date(Date.now() - 10 * 60 * 1000),
       url: 'https://dexscreener.com',
-      rawData: { mock: true }
+      rawData: { mock: true, source: 'mock' }
     };
     return [mockToken];
   }
 
   async fetchPairByAddress(pairAddress: string): Promise<TokenSignalInput | null> {
+    logger.info({ pairAddress }, 'MockRealtimeAdapter: Generating fake pair data');
     return {
       tokenAddress: `mock_token_${pairAddress}`,
       pairAddress,
@@ -47,7 +48,7 @@ export class MockRealtimeAdapter implements IngestionAdapter {
       pairAgeMinutes: 15,
       pairCreatedAt: new Date(Date.now() - 15 * 60 * 1000),
       url: 'https://dexscreener.com',
-      rawData: { mock: true }
+      rawData: { mock: true, source: 'mock' }
     };
   }
 }

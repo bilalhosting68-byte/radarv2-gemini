@@ -1,46 +1,47 @@
 # MemeRadar V2
-> ⚠️ **PAPER TRADING ONLY** - Questo bot è una simulazione e NON include funzionalità di esecuzione reale.
+> ⚠️ **PAPER TRADING ONLY** - Questo bot è una simulazione e NON include funzionalità di esecuzione reale. Nessun wallet, nessuna private key.
 
 MemeRadar V2 è un framework avanzato per il paper trading di memecoin su Solana, progettato per testare strategie di ingresso e gestione del rischio. È un'evoluzione delle precedenti versioni, riscritta per essere event-driven, modulare e resiliente.
 
-## Cosa Fa
-1. **Scansiona** continuamente nuovi token su Solana usando DexScreener o in modalità mock.
-2. **Analizza** il rischio di ogni pair tramite un "Risk Engine" basato su regole rigorose (liquidità, volume, età).
-3. **Simula** entrate applicando un modello di slippage (Constant Product AMM o fisso).
-4. **Traccia** i prezzi delle posizioni virtuali aperte.
-5. **Simula** uscite basate su Stop Loss, Take Profit, Trailing Stop e Max Hold Time.
-6. **Esporta** report dettagliati e genera metriche.
+## Quick Start
+1. `npm install`
+2. `docker compose up -d`
+3. `cp .env.example .env` (imposta `DATA_SOURCE_MODE="rest"` per DexScreener reale)
+4. `npm run prisma:generate`
+5. `npm run prisma:migrate -- --name init`
+6. `npm run dev`
 
-## Cosa NON Fa
-- NON fa trading reale.
-- NON richiede né gestisce private key.
-- NON firma transazioni.
-- NON ha un wallet integrato.
+## Installazione Ubuntu passo passo
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git ca-certificates unzip
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+curl -fsSL https://get.docker.com | sudo sh
+git clone <tuo-repo>
+cd MemeRadar_V2
+npm install
+docker compose up -d
+cp .env.example .env
+npm run prisma:generate
+npm run prisma:migrate -- --name init
+```
 
-## Architettura
-- **Node.js + TypeScript**
-- **BullMQ + Redis:** Gestione asincrona degli eventi tramite code.
-- **PostgreSQL + Prisma ORM:** Persistenza dei dati (segnali, decisioni, posizioni virtuali).
-
-## Requisiti
-- Node.js 20+
-- Docker & Docker Compose (per PostgreSQL e Redis)
-- Un Webhook Discord (opzionale, per ricevere alert)
-
-## Installazione e Avvio
-1. Installa dipendenze: \`npm install\`
-2. Avvia i database: \`docker compose up -d\`
-3. Configura \`.env\` copiando \`.env.example\`
-4. Inizializza il DB:
-   \`\`\`bash
-   npm run prisma:generate
-   npm run prisma:migrate
-   \`\`\`
-5. Avvia il bot: \`npm run dev\`
+## Mock vs Rest
+Nel file `.env`:
+- `DATA_SOURCE_MODE="rest"`: Usa le API di DexScreener (Dati Reali).
+- `DATA_SOURCE_MODE="mock"`: Genera token simulati (Test Infrastruttura).
 
 ## Script Utili
-- \`npm test\`: Esegue i test Vitest.
-- \`npm run report\`: Genera un Markdown report riassuntivo.
-- \`npm run export:csv\`: Esporta le posizioni, decisioni e metriche in formato CSV.
-- \`npm run docs:pdf\`: Genera la guida PDF ufficiale nella cartella docs.
-  - *Nota:* Su VPS, potrebbe servire eseguire prima: \`npx puppeteer browsers install chrome\`
+- `npm run dev`: Avvia in modalità sviluppo.
+- `npm run build` & `npm start`: Compila e avvia in produzione.
+- `npm test`: Esegue la suite Vitest.
+- `npm run report`: Genera un Markdown report in `reports/`.
+- `npm run metrics:summary`: Stampa a video il riassunto delle metriche.
+- `npm run export:csv`: Esporta posizioni e metriche in formato CSV in `exports/`.
+- `npm run docs:pdf`: Genera la guida PDF ufficiale.
+  - *Nota:* Su VPS, se fallisce, esegui: `npx puppeteer browsers install chrome`
+
+## Roadmap
+- Integrazione Helius/Birdeye per controlli on-chain.
+- Nessun trading reale pianificato nella V2 per motivi di sicurezza.

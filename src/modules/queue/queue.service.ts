@@ -1,6 +1,7 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { getRedisConnection } from '../storage/redis.service';
-import { env } from '../../config/env';
+import { prisma } from '../storage/database.service';
+import { logger } from '../../logger';
 
 const queues: Record<string, Queue> = {};
 
@@ -25,13 +26,33 @@ export function getQueue(name: string): Queue {
 }
 
 export function createWorker(name: string, processor: (job: Job) => Promise<any>) {
-  const worker = new Worker(name, processor, {
+  const worker = new Worker(name, async (job) => {
+    logger.info({ jobId: job.id, queue: name }, `Starting job ${job.name}`);
+    try {
+      return await processor(job);
+    } catch (error: any) {
+      logger.error({ error, jobId: job.id, queue: name }, `Job failed during processing`);
+      throw error;
+    }
+  }, {
     connection: getRedisConnection() as any,
   });
   
-  worker.on('failed', (job, err) => {
-    // This will be caught and potentially logged elsewhere, but we can hook in
-    console.error(`Job ${job?.id} in queue ${name} failed:`, err);
+  worker.on('failed', async (job, err) => {
+    logger.error({ error: err, jobId: job?.id, queue: name }, `Job failed completely in queue ${name}`);
+    try {
+      await prisma.botEvent.create({
+        data: {
+          level: 'ERROR',
+          type: 'QUEUE_FAILURE',
+          source: name,
+          message: err.message || 'Unknown queue error',
+          metadata: { jobId: job?.id, jobName: job?.name, error: err.stack }
+        }
+      });
+    } catch (dbErr) {
+      logger.error({ dbErr }, 'Failed to save BotEvent for queue failure');
+    }
   });
 
   return worker;

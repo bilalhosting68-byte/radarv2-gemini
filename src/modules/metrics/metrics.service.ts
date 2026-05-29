@@ -104,7 +104,13 @@ export class MetricsService {
 
     const totalLosses = losses.reduce((a, b) => a + b, 0);
     const totalWins = wins.reduce((a, b) => a + b, 0);
-    if (totalLosses > 0) profitFactor = totalWins / totalLosses;
+    if (totalLosses > 0) {
+      profitFactor = totalWins / totalLosses;
+    } else if (totalWins > 0) {
+      profitFactor = Infinity; // Infinity since there are only wins
+    } else {
+      profitFactor = null;
+    }
 
     // Skipped signals
     const skipped = await prisma.signalDecision.findMany({ where: { decision: 'SKIPPED' } });

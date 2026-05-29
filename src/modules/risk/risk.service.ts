@@ -56,7 +56,9 @@ export class RiskService {
       checks.push({ name: 'Pair Age', status: 'PASS', penalty: 0, value: signal.pairAgeMinutes });
     }
 
-    if (env.DATA_SOURCE_MODE === 'mock') {
+    if (signal.rawData && signal.rawData.source === 'mock') {
+      checks.push({ name: 'MOCK_DATA_SOURCE', status: 'UNKNOWN', penalty: 5, message: 'Mock data source' });
+    } else if (env.DATA_SOURCE_MODE === 'mock') {
       checks.push({ name: 'Mock Data', status: 'UNKNOWN', penalty: 5, message: 'Data is simulated' });
     }
 

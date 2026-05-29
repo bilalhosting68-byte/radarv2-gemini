@@ -81,18 +81,45 @@ describe('PaperTradingService Full Suite', () => {
     expect(executeExitSpy).toHaveBeenCalledWith(expect.anything(), 151, 10000, 'TAKE_PROFIT');
   });
 
-  it('should evaluate exit for Trailing Stop', async () => {
-    const position = { 
+  it('should evaluate exit for Trailing Stop only after profit', async () => {
+    // 1. Mai in profitto: non si attiva
+    const positionLoss = { 
       id: 'pos1', status: 'OPEN', entryExecutionPriceUsd: 100, 
-      stopLossPercent: 10, takeProfitPercent: 100, trailingStopPercent: 10, 
-      highestPriceUsd: 150, openedAt: new Date() 
+      stopLossPercent: 50, takeProfitPercent: 100, trailingStopPercent: 10, 
+      highestPriceUsd: 100, openedAt: new Date() 
     };
-    mockPrisma.paperPosition.findUnique.mockResolvedValue(position);
+    mockPrisma.paperPosition.findUnique.mockResolvedValue(positionLoss);
     const executeExitSpy = vi.spyOn(paperTradingService, 'executeExit').mockResolvedValue(undefined);
     
-    // Highest was 150, 10% trailing stop is 135. Price 134 should trigger.
-    await paperTradingService.evaluateExit('pos1', 134, 10000);
+    await paperTradingService.evaluateExit('pos1', 95, 10000); // Scende a 95
+    expect(executeExitSpy).not.toHaveBeenCalledWith(expect.anything(), 95, 10000, 'TRAILING_STOP');
+
+    // 2. In profitto, poi ritraccia: si attiva
+    const positionWin = { 
+      id: 'pos2', status: 'OPEN', entryExecutionPriceUsd: 100, 
+      stopLossPercent: 50, takeProfitPercent: 100, trailingStopPercent: 10, 
+      highestPriceUsd: 150, openedAt: new Date() 
+    };
+    mockPrisma.paperPosition.findUnique.mockResolvedValue(positionWin);
+    
+    await paperTradingService.evaluateExit('pos2', 134, 10000); // 150 * 0.9 = 135. A 134 scatta.
     expect(executeExitSpy).toHaveBeenCalledWith(expect.anything(), 134, 10000, 'TRAILING_STOP');
+  });
+
+  it('should evaluate entry correctly and open valid position', async () => {
+    mockPrisma.paperPosition.count.mockResolvedValue(0);
+    mockPrisma.paperPosition.findFirst.mockResolvedValue(null);
+    mockPrisma.tokenSignal.findUnique.mockResolvedValue({ id: '123' });
+    mockPrisma.paperPosition.create.mockResolvedValue({ id: 'new_pos_id' });
+    const ctx: any = {
+      signal: { tokenAddress: 't', pairAddress: 'p', liquidityUsd: 50000, volume5mUsd: 10000, buyRatio: 0.8, marketCapUsd: 100000, symbol: 'TEST' },
+      riskScore: 20, riskLevel: 'LOW'
+    };
+    await paperTradingService.evaluateEntry(ctx);
+    expect(mockPrisma.signalDecision.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ decision: 'OPENED' })
+    }));
+    expect(mockPrisma.paperPosition.create).toHaveBeenCalled();
   });
 
   it('should evaluate exit for Max Hold Time', async () => {
