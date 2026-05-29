@@ -5,7 +5,14 @@ const { mockPrisma } = vi.hoisted(() => {
   return {
     mockPrisma: {
       paperPosition: {
+        findMany: vi.fn(),
+        count: vi.fn()
+      },
+      signalDecision: {
         findMany: vi.fn()
+      },
+      botEvent: {
+        count: vi.fn()
       },
       metricsSnapshot: {
         create: vi.fn()
@@ -33,6 +40,9 @@ describe('MetricsService', () => {
       { status: 'OPEN' }
     ];
     mockPrisma.paperPosition.findMany.mockResolvedValue(mockPositions);
+    mockPrisma.signalDecision.findMany.mockResolvedValue([]);
+    mockPrisma.paperPosition.count.mockResolvedValue(0);
+    mockPrisma.botEvent.count.mockResolvedValue(0);
 
     const metrics = await metricsService.calculateMetrics();
 

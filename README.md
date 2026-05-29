@@ -43,3 +43,4 @@ MemeRadar V2 è un framework avanzato per il paper trading di memecoin su Solana
 - \`npm run report\`: Genera un Markdown report riassuntivo.
 - \`npm run export:csv\`: Esporta le posizioni, decisioni e metriche in formato CSV.
 - \`npm run docs:pdf\`: Genera la guida PDF ufficiale nella cartella docs.
+  - *Nota:* Su VPS, potrebbe servire eseguire prima: \`npx puppeteer browsers install chrome\`

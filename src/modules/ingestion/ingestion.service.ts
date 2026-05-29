@@ -10,18 +10,26 @@ export class IngestionService {
   private adapter: IngestionAdapter;
 
   constructor() {
-    if (env.DATA_SOURCE_MODE === 'mock' || env.ENABLE_MOCK_REALTIME) {
+    if (env.DATA_SOURCE_MODE === 'mock') {
       this.adapter = new MockRealtimeAdapter();
-      logger.info('Using MockRealtimeAdapter for ingestion');
+      logger.info('Using MockRealtimeAdapter for ingestion (DATA_SOURCE_MODE=mock)');
     } else {
       this.adapter = new DexScreenerAdapter();
-      logger.info('Using DexScreenerAdapter for ingestion');
+      logger.info('Using DexScreenerAdapter for ingestion (DATA_SOURCE_MODE=rest)');
     }
   }
 
   async runScanCycle() {
     try {
       const candidates = await this.adapter.fetchLatestCandidates();
+      
+      if (env.ENABLE_MOCK_REALTIME && env.DATA_SOURCE_MODE === 'rest') {
+        const mockAdapter = new MockRealtimeAdapter();
+        const mockCandidates = await mockAdapter.fetchLatestCandidates();
+        candidates.push(...mockCandidates);
+        logger.debug({ count: mockCandidates.length }, 'Added extra mock candidates');
+      }
+
       logger.info({ count: candidates.length }, 'Fetched token candidates');
       
       const tokenQueue = getQueue('token.discovered');
