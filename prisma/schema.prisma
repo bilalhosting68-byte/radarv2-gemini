@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TokenSignal {
+  id             String   @id @default(uuid())
+  tokenAddress   String
+  pairAddress    String
+  chain          String
+  dex            String
+  symbol         String
+  name           String
+  priceUsd       Float
+  liquidityUsd   Float
+  marketCapUsd   Float
+  volume5mUsd    Float
+  volume1hUsd    Float
+  buys5m         Int
+  sells5m        Int
+  buyRatio       Float
+  pairAgeMinutes Float
+  pairCreatedAt  DateTime
+  url            String?
+  rawData        Json?
+  discoveredAt   DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  riskResults     RiskResult[]
+  signalDecisions SignalDecision[]
+  paperPositions  PaperPosition[]
+
+  @@unique([tokenAddress, pairAddress])
+}
+
+model RiskResult {
+  id            String   @id @default(uuid())
+  tokenSignalId String
+  score         Int
+  level         String
+  reasons       Json
+  checks        Json
+  unknownChecks Json
+  createdAt     DateTime @default(now())
+
+  tokenSignal TokenSignal @relation(fields: [tokenSignalId], references: [id])
+  riskChecks  RiskCheck[]
+}
+
+model RiskCheck {
+  id           String   @id @default(uuid())
+  riskResultId String
+  name         String
+  status       String
+  value        String?
+  penalty      Int
+  message      String?
+  createdAt    DateTime @default(now())
+
+  riskResult RiskResult @relation(fields: [riskResultId], references: [id])
+}
+
+model SignalDecision {
+  id            String   @id @default(uuid())
+  tokenSignalId String
+  decision      String   // OPENED / SKIPPED
+  reasons       Json
+  passedFilters Boolean
+  riskScore     Int
+  riskLevel     String
+  createdAt     DateTime @default(now())
+
+  tokenSignal TokenSignal @relation(fields: [tokenSignalId], references: [id])
+}
+
+model PaperPosition {
+  id                      String   @id @default(uuid())
+  tokenSignalId           String
+  tokenAddress            String
+  pairAddress             String
+  symbol                  String
+  status                  String   // OPEN / CLOSED
+  entryMarketPriceUsd     Float
+  entryExecutionPriceUsd  Float
+  currentPriceUsd         Float
+  exitMarketPriceUsd      Float?
+  exitExecutionPriceUsd   Float?
+  virtualSizeUsd          Float
+  tokenAmount             Float
+  entryFeeUsd             Float
+  exitFeeUsd              Float?
+  entryPriceImpactPercent Float
+  exitPriceImpactPercent  Float?
+  highestPriceUsd         Float
+  stopLossPercent         Float
+  takeProfitPercent       Float
+  trailingStopPercent     Float
+  pnlUsd                  Float?
+  pnlPercent              Float?
+  closeReason             String?
+  openedAt                DateTime @default(now())
+  closedAt                DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  tokenSignal TokenSignal @relation(fields: [tokenSignalId], references: [id])
+  events      PaperTradeEvent[]
+}
+
+model PaperTradeEvent {
+  id                String   @id @default(uuid())
+  paperPositionId   String
+  type              String   // OPEN / UPDATE / CLOSE
+  marketPriceUsd    Float
+  executionPriceUsd Float?
+  pnlUsd            Float?
+  pnlPercent        Float?
+  metadata          Json?
+  createdAt         DateTime @default(now())
+
+  paperPosition PaperPosition @relation(fields: [paperPositionId], references: [id])
+}
+
+model PriceSnapshot {
+  id           String   @id @default(uuid())
+  tokenAddress String
+  pairAddress  String
+  priceUsd     Float
+  liquidityUsd Float?
+  marketCapUsd Float?
+  volume5mUsd  Float?
+  source       String
+  createdAt    DateTime @default(now())
+}
+
+model MetricsSnapshot {
+  id                     String   @id @default(uuid())
+  totalTrades            Int
+  openTrades             Int
+  closedTrades           Int
+  winratePercent         Float
+  totalPnlUsd            Float
+  averagePnlUsd          Float
+  averagePnlPercent      Float
+  averageWinUsd          Float
+  averageLossUsd         Float
+  profitFactor           Float?
+  maxDrawdownUsd         Float
+  biggestWinUsd          Float
+  biggestLossUsd         Float
+  averageHoldMinutes     Float
+  pnlByCloseReason       Json
+  pnlByRiskLevel         Json
+  pnlByMarketCapRange    Json
+  pnlByLiquidityRange    Json
+  skippedSignalsByReason Json
+  stalePriceCount        Int
+  apiErrorCount          Int
+  queueFailureCount      Int
+  createdAt              DateTime @default(now())
+}
+
+model BotEvent {
+  id        String   @id @default(uuid())
+  level     String   // INFO / WARN / ERROR / FATAL
+  source    String
+  type      String
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+}

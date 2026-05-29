@@ -1,0 +1,37 @@
+{
+  "name": "memeradar_v2",
+  "version": "1.0.0",
+  "description": "Paper trading bot for Solana memecoins",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "report": "tsx scripts/generate-report.ts",
+    "export:csv": "tsx scripts/export-csv.ts",
+    "metrics:summary": "tsx scripts/metrics-summary.ts",
+    "docs:pdf": "tsx scripts/generate-tutorial-pdf.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.13.0",
+    "bullmq": "^5.7.8",
+    "dotenv": "^16.4.5",
+    "ioredis": "^5.4.1",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0",
+    "zod": "^3.23.8",
+    "csv-stringify": "^6.4.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "md-to-pdf": "^5.2.4",
+    "prisma": "^5.13.0",
+    "tsx": "^4.7.3",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
