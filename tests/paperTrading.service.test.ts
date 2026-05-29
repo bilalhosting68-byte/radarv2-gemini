@@ -112,7 +112,7 @@ describe('PaperTradingService Full Suite', () => {
     mockPrisma.tokenSignal.findUnique.mockResolvedValue({ id: '123' });
     mockPrisma.paperPosition.create.mockResolvedValue({ id: 'new_pos_id' });
     const ctx: any = {
-      signal: { tokenAddress: 't', pairAddress: 'p', liquidityUsd: 50000, volume5mUsd: 10000, buyRatio: 0.8, marketCapUsd: 100000, symbol: 'TEST' },
+      signal: { tokenAddress: 't', pairAddress: 'p', liquidityUsd: 50000, volume5mUsd: 10000, buyRatio: 0.8, marketCapUsd: 100000, symbol: 'TEST', priceUsd: 1 },
       riskScore: 20, riskLevel: 'LOW'
     };
     await paperTradingService.evaluateEntry(ctx);
@@ -120,6 +120,48 @@ describe('PaperTradingService Full Suite', () => {
       data: expect.objectContaining({ decision: 'OPENED' })
     }));
     expect(mockPrisma.paperPosition.create).toHaveBeenCalled();
+  });
+
+  it('should skip entry if price is zero or missing', async () => {
+    const ctx: any = {
+      signal: { tokenAddress: 't', pairAddress: 'p', liquidityUsd: 50000, volume5mUsd: 10000, buyRatio: 0.8, marketCapUsd: 100000, symbol: 'TEST', priceUsd: 0 },
+      riskScore: 20, riskLevel: 'LOW'
+    };
+    await paperTradingService.evaluateEntry(ctx);
+    expect(mockPrisma.signalDecision.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ decision: 'SKIPPED', reasons: expect.arrayContaining(['Invalid or zero price']) })
+    }));
+  });
+
+  it('should skip entry if tokenAddress or pairAddress is missing', async () => {
+    const ctx: any = {
+      signal: { liquidityUsd: 50000, volume5mUsd: 10000, buyRatio: 0.8, marketCapUsd: 100000, symbol: 'TEST', priceUsd: 1 },
+      riskScore: 20, riskLevel: 'LOW'
+    };
+    await paperTradingService.evaluateEntry(ctx);
+    expect(mockPrisma.signalDecision.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ decision: 'SKIPPED', reasons: expect.arrayContaining(['Missing token address', 'Missing pair address']) })
+    }));
+  });
+
+  it('should evaluate exit for STALE_PRICE when forceReason is provided', async () => {
+    const position = { 
+      id: 'pos-stale', status: 'OPEN', entryExecutionPriceUsd: 100, virtualSizeUsd: 10, tokenAmount: 0.1,
+      stopLossPercent: 10, takeProfitPercent: 100, trailingStopPercent: 10, 
+      highestPriceUsd: 100, openedAt: new Date() 
+    };
+    mockPrisma.paperPosition.findUnique.mockResolvedValue(position);
+    
+    // Simulate what positionExitWorker does
+    await paperTradingService.executeExit(position, 100, 0, 'STALE_PRICE');
+    
+    expect(mockPrisma.paperPosition.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'pos-stale' },
+      data: expect.objectContaining({ status: 'CLOSED', closeReason: 'STALE_PRICE' })
+    }));
+    expect(mockPrisma.paperTradeEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ type: 'CLOSE', pnlUsd: expect.anything() })
+    }));
   });
 
   it('should evaluate exit for Max Hold Time', async () => {

@@ -99,19 +99,40 @@ export class DexScreenerAdapter implements IngestionAdapter {
 
   async fetchLatestCandidates(): Promise<TokenSignalInput[]> {
     try {
-      const data = await this.fetchWithRetry('https://api.dexscreener.com/token-profiles/latest/v1', 'profile');
-      if (!Array.isArray(data)) return [];
+      // 1. Fetch from token-profiles
+      const profilesData = await this.fetchWithRetry('https://api.dexscreener.com/token-profiles/latest/v1', 'profile');
+      
+      // 2. Fetch from token-boosts
+      const boostsData = await this.fetchWithRetry('https://api.dexscreener.com/token-boosts/latest/v1', 'profile');
+      
+      const allSourceTokens = [];
+      if (Array.isArray(profilesData)) {
+        allSourceTokens.push(...profilesData);
+      }
+      if (Array.isArray(boostsData)) {
+        allSourceTokens.push(...boostsData);
+      }
 
-      const solanaTokens = data.filter((t: any) => t.chainId === 'solana').slice(0, env.DEXSCREENER_MAX_TOKENS_PER_SCAN);
-      if (solanaTokens.length === 0) return [];
+      if (allSourceTokens.length === 0) return [];
 
-      const addresses = solanaTokens.map((t: any) => t.tokenAddress).join(',');
+      // Filter solana and unique tokenAddresses
+      const solanaTokenAddresses = Array.from(new Set(
+        allSourceTokens
+          .filter((t: any) => t.chainId === 'solana')
+          .map((t: any) => t.tokenAddress)
+      )).slice(0, env.DEXSCREENER_MAX_TOKENS_PER_SCAN);
+
+      if (solanaTokenAddresses.length === 0) return [];
+
+      const addresses = solanaTokenAddresses.join(',');
       const pairsData = await this.fetchWithRetry(`https://api.dexscreener.com/tokens/v1/solana/${addresses}`, 'pair');
       
       const inputs: TokenSignalInput[] = [];
-      for (const pair of pairsData) {
-        const normalized = this.normalizePair(pair);
-        if (normalized) inputs.push(normalized);
+      if (Array.isArray(pairsData)) {
+        for (const pair of pairsData) {
+          const normalized = this.normalizePair(pair);
+          if (normalized) inputs.push(normalized);
+        }
       }
       return inputs;
     } catch (error) {

@@ -39,6 +39,7 @@ const envSchema = z.object({
   TRAILING_STOP_PERCENT: z.coerce.number().nonnegative(),
   MAX_HOLD_MINUTES: z.coerce.number().positive(),
   PRICE_STALE_MINUTES: z.coerce.number().positive(),
+  PROCESSED_TOKEN_TTL_MINUTES: z.coerce.number().positive(),
 
   DEXSCREENER_MAX_TOKENS_PER_SCAN: z.coerce.number().int().positive(),
   DEXSCREENER_REQUEST_TIMEOUT_MS: z.coerce.number().positive(),

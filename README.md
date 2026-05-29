@@ -23,14 +23,19 @@ cd MemeRadar_V2
 npm install
 docker compose up -d
 cp .env.example .env
+# Modifica .env con i tuoi parametri (es. PROCESSED_TOKEN_TTL_MINUTES)
 npm run prisma:generate
 npm run prisma:migrate -- --name init
+npm run build
+npm start
 ```
 
 ## Mock vs Rest
 Nel file `.env`:
 - `DATA_SOURCE_MODE="rest"`: Usa le API di DexScreener (Dati Reali).
 - `DATA_SOURCE_MODE="mock"`: Genera token simulati (Test Infrastruttura).
+- `ENABLE_MOCK_REALTIME`: Se `true` e mode="rest", aggiunge token mock extra allo scanner.
+- `PROCESSED_TOKEN_TTL_MINUTES`: Tempo di permanenza in cache Redis per evitare di ri-processare lo stesso pair (default 30 min).
 
 ## Script Utili
 - `npm run dev`: Avvia in modalità sviluppo.

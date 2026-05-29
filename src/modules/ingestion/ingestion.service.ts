@@ -4,6 +4,7 @@ import { env } from '../../config/env';
 import { DexScreenerAdapter } from './adapters/dexscreener.adapter';
 import { MockRealtimeAdapter } from './adapters/mockRealtime.adapter';
 import { getQueue } from '../queue/queue.service';
+import { getRedisConnection } from '../storage/redis.service';
 import { logger } from '../../logger';
 
 export class IngestionService {
@@ -32,8 +33,21 @@ export class IngestionService {
 
       logger.info({ count: candidates.length }, 'Fetched token candidates');
       
+      const redis = getRedisConnection();
       const tokenQueue = getQueue('token.discovered');
+      
       for (const candidate of candidates) {
+        const cacheKey = `processed_pair:${candidate.pairAddress}`;
+        const alreadyProcessed = await redis.get(cacheKey);
+
+        if (alreadyProcessed) {
+          logger.debug({ pair: candidate.pairAddress }, 'Skipping already processed pair (cached)');
+          continue;
+        }
+
+        // Add to cache with TTL
+        await redis.set(cacheKey, '1', 'EX', env.PROCESSED_TOKEN_TTL_MINUTES * 60);
+
         await tokenQueue.add('process-candidate', candidate, {
           jobId: `discovered:${candidate.pairAddress}:${Date.now()}`
         });

@@ -161,6 +161,11 @@ npm start
   - Cosa fa: Connessione a Redis.
   - Consigliato: `redis://localhost:6380` (come nel file).
 
+- **PROCESSED_TOKEN_TTL_MINUTES**
+  - Cosa fa: Tempo di permanenza nella cache Redis per i pair già analizzati.
+  - Valore consigliato: `30`.
+  - Quando modificarla: Per scansionare più o meno frequentemente gli stessi token.
+
 - **DISCORD_WEBHOOK_URL**
   - Cosa fa: Invia le allerte Discord.
   - Consigliato: Lascialo vuoto, oppure inserisci l'url del tuo server.

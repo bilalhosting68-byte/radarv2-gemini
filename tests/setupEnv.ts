@@ -27,6 +27,7 @@ process.env.TAKE_PROFIT_PERCENT = '60';
 process.env.TRAILING_STOP_PERCENT = '25';
 process.env.MAX_HOLD_MINUTES = '30';
 process.env.PRICE_STALE_MINUTES = '5';
+process.env.PROCESSED_TOKEN_TTL_MINUTES = '30';
 process.env.DEXSCREENER_MAX_TOKENS_PER_SCAN = '20';
 process.env.DEXSCREENER_REQUEST_TIMEOUT_MS = '10000';
 process.env.DEXSCREENER_MAX_RETRIES = '3';

@@ -18,7 +18,14 @@ export class MetricsService {
     });
     
     const openTrades = allPositions.filter(p => p.status === 'OPEN').length;
-    const closedPositions = allPositions.filter(p => p.status === 'CLOSED');
+    const closedPositions = allPositions
+      .filter(p => p.status === 'CLOSED')
+      .sort((a, b) => {
+        const dateA = a.closedAt ? a.closedAt.getTime() : 0;
+        const dateB = b.closedAt ? b.closedAt.getTime() : 0;
+        return dateA - dateB;
+      });
+    
     const closedTrades = closedPositions.length;
     const totalTrades = allPositions.length;
 

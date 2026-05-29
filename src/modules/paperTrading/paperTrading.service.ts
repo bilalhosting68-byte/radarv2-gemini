@@ -22,7 +22,27 @@ export class PaperTradingService {
     const { signal, riskLevel } = ctx;
     const reasons: string[] = [];
 
-    // Check risk level allowed
+    // Data validation checks
+    if (!signal.priceUsd || signal.priceUsd <= 0) {
+      reasons.push('Invalid or zero price');
+    }
+    if (!signal.tokenAddress) {
+      reasons.push('Missing token address');
+    }
+    if (!signal.pairAddress) {
+      reasons.push('Missing pair address');
+    }
+    if (!signal.symbol) {
+      reasons.push('Missing token symbol');
+    }
+    if (signal.liquidityUsd === undefined || signal.liquidityUsd === null) {
+      reasons.push('Missing liquidity data');
+    }
+    if (signal.marketCapUsd === undefined || signal.marketCapUsd === null) {
+      reasons.push('Missing market cap data');
+    }
+
+    // Risk and business logic filters
     const levels = ['LOW', 'MEDIUM', 'HIGH', 'EXTREME'];
     const maxAllowedIndex = levels.indexOf(env.RISK_MAX_ALLOWED_LEVEL);
     const currentIndex = levels.indexOf(riskLevel);
